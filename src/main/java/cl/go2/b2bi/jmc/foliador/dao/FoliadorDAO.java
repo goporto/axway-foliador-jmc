@@ -18,7 +18,7 @@ public interface FoliadorDAO {
                                  String correlativoInst, int version, long cantLineas,
                                  String filial, String fecha) throws SQLException;
     void setMovement(Connection conn, String correlativo, String estado) throws SQLException;
-    void rejectAndSaveError(Connection conn, String correlativo, String codError, String msg, String fileContent);
+    void rejectAndSaveError(Connection conn, String correlativo, String codError, String msg)throws SQLException;
     /**
      * Consulta el largo del registro para un t_doc específico.
      * @param conn Conexión activa a BD

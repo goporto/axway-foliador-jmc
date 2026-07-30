@@ -4,13 +4,17 @@ import oracle.jdbc.OracleTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cl.go2.b2bi.jmc.foliador.model.PositionConfig;
+
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FoliadorOracleDAO implements FoliadorDAO {
 
     private static final Logger logger = LoggerFactory.getLogger(FoliadorOracleDAO.class);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public String getCorrelativoValTraza(Connection conn) throws SQLException {
@@ -127,28 +131,55 @@ public class FoliadorOracleDAO implements FoliadorDAO {
 
     @Override
     public void setMovement(Connection conn, String correlativo, String estado) throws SQLException {
-        String sql = "{call PROC_SET_MOVEMENT(?, ?)}";
+        String formattedDate = LocalDateTime.now().format(DATE_FORMATTER);
+        String sql = "{? = call FUNC_VAL_CARGAMOVIMIENTO(?, ?, ?, ?, ?, ?)}";
+
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.setString(1, correlativo);
-            cstmt.setString(2, estado);
+            // Parámetro 1: Valor de retorno (str)
+            cstmt.registerOutParameter(1, Types.VARCHAR);
+
+            // Parámetros de entrada
+            cstmt.setString(2, correlativo);              // 1. correlativomov (VARCHAR)
+            cstmt.setNull(3, Types.VARCHAR);             // 2. nombrearchsalida (VARCHAR)
+            cstmt.setNull(4, Types.INTEGER);             // 3. cantreg (NUMBER/INTEGER)
+            cstmt.setNull(5, Types.VARCHAR);             // 4. casdestino (VARCHAR)
+            cstmt.setString(6, estado);                  // 5. estadomovaux (VARCHAR)
+            cstmt.setString(7, formattedDate);           // 6. fechamov (VARCHAR)
+
             cstmt.execute();
+
+            String result = cstmt.getString(1);
+            logger.info("[Oracle] FUNC_VAL_CARGAMOVIMIENTO ejecutada para correlativo {} con estado {}. Resultado: {}",
+                    correlativo, estado, result);
+
         } catch (SQLException e) {
-            logger.warn("[Oracle] No se pudo ejecutar PROC_SET_MOVEMENT: {}", e.getMessage());
+            logger.error("[Oracle] Error al ejecutar FUNC_VAL_CARGAMOVIMIENTO para correlativo " + correlativo, e);
+            throw e;
         }
     }
-
     @Override
-    public void rejectAndSaveError(Connection conn, String correlativo, String codError, String msg, String fileContent) {
-        String sql = "{call PROC_REJECT_AND_SAVE_ERROR(?, ?, ?, ?)}";
-        try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.setString(1, correlativo);
-            cstmt.setString(2, codError);
-            cstmt.setString(3, msg);
-            cstmt.setString(4, fileContent);
+    public void rejectAndSaveError(Connection conn, String correlativo, String codError, String msg) throws SQLException {
+        String formattedDate = LocalDateTime.now().format(DATE_FORMATTER);
+        String sqlFunc = "{? = call FUNC_VAL_CARGAERROR(?, ?, ?, ?, ?)}";
+
+        try (CallableStatement cstmt = conn.prepareCall(sqlFunc)) {
+            cstmt.registerOutParameter(1, Types.VARCHAR);
+            cstmt.setString(2, correlativo);
+            cstmt.setString(3, codError);
+            cstmt.setString(4, msg);
+            cstmt.setString(5, formattedDate);
+            cstmt.setString(6, "1");
+
             cstmt.execute();
+
+            String result = cstmt.getString(1);
+            logger.info("[Oracle] FUNC_VAL_CARGAERROR ejecutada para correlativo {}. Resultado: {}", correlativo, result);
         } catch (SQLException e) {
-            logger.error("[Oracle] Error al registrar rechazo para correlativo " + correlativo, e);
+            logger.error("[Oracle] Error al invocar FUNC_VAL_CARGAERROR para correlativo " + correlativo, e);
+            throw e;
         }
+
+        this.setMovement(conn, correlativo, "000");
     }
 
     @Override
@@ -164,7 +195,7 @@ public class FoliadorOracleDAO implements FoliadorDAO {
             return cstmt.getInt(1);
         } catch (SQLException e) {
             logger.error("[Oracle] Error al consultar FUNC_BUSCAR_LARGO_REGISTRO para tDoc: " + tDoc, e);
-            return 322; // Valor de contingencia por defecto según norma
+            return 322;
         }
     }
 
@@ -202,5 +233,4 @@ public class FoliadorOracleDAO implements FoliadorDAO {
         }
         return list;
     }
-
 }

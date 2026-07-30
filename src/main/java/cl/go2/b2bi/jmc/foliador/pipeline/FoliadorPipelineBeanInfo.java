@@ -14,4 +14,18 @@ public class FoliadorPipelineBeanInfo extends SimpleBeanInfo{
         return descriptor;
     }
 
+    @Override
+    public PropertyDescriptor[] getPropertyDescriptors() {
+        try {
+            PropertyDescriptor pathDescriptor = new PropertyDescriptor("configFilePath", FoliadorPipeline.class);
+            pathDescriptor.setShortDescription("Ruta completa al archivo de propiedades conexión a DB)");
+
+
+
+            return new PropertyDescriptor[] { pathDescriptor };
+        } catch (IntrospectionException e) {
+            throw new RuntimeException("Error inicializando propiedades del JMC", e);
+        }
+    }
+
 }

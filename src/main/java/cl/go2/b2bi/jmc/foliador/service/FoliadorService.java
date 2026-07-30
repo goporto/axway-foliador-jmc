@@ -17,7 +17,15 @@ public class FoliadorService {
     private static final Logger logger = LoggerFactory.getLogger(FoliadorService.class);
     //private final FoliadorDAO dao = new FoliadorDAO();
     private final HeaderParserService headerParser = new HeaderParserService();
+    private String configFilePath;              //archivo propiedades para conexión a BD
 
+    public String getConfigFilePath() {
+        return configFilePath;
+    }
+
+    public void setConfigFilePath(String configFilePath) {
+        this.configFilePath = configFilePath;
+    }
 
 
 
@@ -25,7 +33,7 @@ public class FoliadorService {
                                                  Context context, ProcessingMessage processingMessage,
                                                  long fileSize, long cantLineas) throws Exception {
 
-        try (Connection conn = DatabaseFactory.getConnection()) {
+        try (Connection conn = DatabaseFactory.getConnection(getConfigFilePath())) {
             String dbUrl = conn.getMetaData().getURL();
             FoliadorDAO dao = DAOFactory.getDAO(dbUrl);
             conn.setAutoCommit(false); // Manejo transaccional
@@ -69,19 +77,19 @@ public class FoliadorService {
 
             // 8. Validaciones de negocio y de errores
             if (fileSize == 0) {
-                dao.rejectAndSaveError(conn, correlativo, "088", "Archivo vacío", archivoEntrada);
+                dao.rejectAndSaveError(conn, correlativo, "088", "Archivo vacío");
                 conn.commit();
                 throw new IllegalArgumentException("El archivo se encuentra vacío");
             }
 
             if (headerData.tDocHeader == null || headerData.tDocHeader.isEmpty()) {
-                dao.rejectAndSaveError(conn, correlativo, "089", "Archivo de datos", archivoEntrada);
+                dao.rejectAndSaveError(conn, correlativo, "089", "Archivo de datos");
                 conn.commit();
                 throw new IllegalArgumentException("Línea de header vacía");
             }
 
             if ("NE".equals(usuarioCasilla)) {
-                dao.rejectAndSaveError(conn, correlativo, "007", "Casilla no existe: " + usuarioCasillaInput, archivoEntrada);
+                dao.rejectAndSaveError(conn, correlativo, "007", "Casilla no existe: " + usuarioCasillaInput);
                 conn.commit();
                 throw new IllegalArgumentException("Casilla no existe: " + usuarioCasillaInput);
             }
@@ -89,7 +97,7 @@ public class FoliadorService {
             if ("000".equals(tDoc)) {
                 String codErr = headerData.encodeError ? "092" : "083";
                 String msgErr = headerData.encodeError ? "Error de codificación" : "Documento no existe: " + headerData.tDocHeader;
-                dao.rejectAndSaveError(conn, correlativo, codErr, msgErr, archivoEntrada);
+                dao.rejectAndSaveError(conn, correlativo, codErr, msgErr);
                 conn.commit();
                 throw new IllegalArgumentException(msgErr);
             }

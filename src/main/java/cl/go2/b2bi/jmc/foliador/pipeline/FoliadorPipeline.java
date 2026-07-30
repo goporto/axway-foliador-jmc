@@ -24,11 +24,20 @@ public class FoliadorPipeline extends Component implements Creator {
 
     int USUARIO_CASILLA = 0;
     int FILENAME = 1;
+    private String configFilePath;          //Especifica el path del archivo de propiedades para acceder a BD.
+
+    public String getConfigFilePath() {
+        return configFilePath;
+    }
+
+    public void setConfigFilePath(String configFilePath) {
+        this.configFilePath = configFilePath;
+    }
 
 
     @Override
     public void process(Context context, ProcessingMessage processingMessage, Activity[] nextActivities) {
-        FoliadorJMCComponent component = new FoliadorJMCComponent();
+        FoliadorJMCComponent component = new FoliadorJMCComponent(getConfigFilePath());
         try {
             //Dejamos registro del archivo recibido en el trace log
             B2BiMetadataLogger.logAllAttributes(context, processingMessage);
@@ -50,13 +59,17 @@ public class FoliadorPipeline extends Component implements Creator {
                 FoliadorResultDTO result = component.executeJMC(data_fn[USUARIO_CASILLA], data_fn[FILENAME], context, processingMessage, fileSize);
 
                 if( null != result){
-                    if (nextActivities != null && nextActivities.length > 0) {
+                    if (nextActivities != null && nextActivities.length > 1) {
                         resultMessage.setActivity(nextActivities[1]); //
                     }
                     //Insumo para el ruteador
                     resultMessage.setAttribute("RDC.TipoDocumento",result.gettDoc());
+                    resultMessage.setAttribute("RDC.Foliador.Status","SUCCESS");
                     resultMessage.setAttribute("Foliador", result.toJson());
 
+                }else{
+                    //Hubo falla
+                    resultMessage.setAttribute("RDC.Foliador.Status","FAIL");
                 }
 
 

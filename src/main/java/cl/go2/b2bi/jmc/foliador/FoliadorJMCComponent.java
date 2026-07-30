@@ -22,7 +22,12 @@ public class FoliadorJMCComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(FoliadorJMCComponent.class);
     private final FoliadorService service = new FoliadorService();
+    private String configFilePath;          //ruta archivo propiedades conexión BD
 
+
+    public FoliadorJMCComponent(String configFilePath){
+        this.configFilePath = configFilePath;
+    }
     /**
      * Método principal invocado por el pipeline de Axway B2Bi.
      *
@@ -37,11 +42,10 @@ public class FoliadorJMCComponent {
 
 
         long cantLineas = RecordCounterUtils.calculateFixedRows(context, processingMessage);
-
+        //Se inyecta el archivo de propiedades
+        service.setConfigFilePath(this.configFilePath);
 
         try {
-            ProcessingMessage resultMessage = processingMessage.createMessage(MessageScope.CONTAINER);
-
 
             // Espera el resultado del sub-thread con timeout de resiliencia
            return service.executeFoliadoLogic(usuarioCasilla,cleanedFilename,context,processingMessage,fileSize,cantLineas);

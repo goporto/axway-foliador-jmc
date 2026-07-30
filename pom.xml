@@ -80,13 +80,6 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/integrator-javamodules-developmentkit-api-26.19.0-5.jar</systemPath>
     </dependency>
-    <dependency>
-      <groupId>com.axway.b2bi</groupId>
-      <artifactId>integrator-simulator-sdk</artifactId>
-      <version>2.6.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/integrator-javamodules-developmentkit-simulator-26.19.0-5.jar</systemPath>
-    </dependency>
 
     <dependency>
       <groupId>com.axway.b2bi</groupId>
@@ -97,11 +90,26 @@
     </dependency>
     <dependency>
       <groupId>com.axway.b2bi</groupId>
+      <artifactId>integrator-javamodules-developmentkit-simulator</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/integrator-javamodules-developmentkit-simulator-26.19.0-5.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
       <artifactId>commons-beanutils</artifactId>
       <version>2.6.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/commons-beanutils-1.11.0.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-collections-3.2.2.jar</systemPath>
+    </dependency>
+
     <dependency>
       <groupId>com.axway.b2bi</groupId>
       <artifactId>commons-collections</artifactId>
