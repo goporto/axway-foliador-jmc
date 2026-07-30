@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>cl.go2.axway</groupId>
+  <artifactId>axway-foliador-jmc</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>Axway B2Bi JMC Foliador Correlativo</name>
+  <description>Componente JMC Java para foliación y trazabilidad en Axway B2Bi</description>
+
+  <properties>
+    <java.version>11</java.version>
+    <!--maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target-->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <hikaricp.version>5.1.0</hikaricp.version>
+    <ojdbc.version>19.18.0.0</ojdbc.version>
+    <jackson.version>2.15.2</jackson.version>
+    <slf4j.version>2.0.7</slf4j.version>
+  </properties>
+
+  <dependencies>
+    <!-- HikariCP: Pool de conexiones de alto rendimiento -->
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>${hikaricp.version}</version>
+    </dependency>
+
+    <!-- Driver JDBC de Oracle para producción -->
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc8</artifactId>
+      <version>${ojdbc.version}</version>
+    </dependency>
+
+    <!-- Driver JDBC para pipeline de desarrollo -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.7.3</version>
+    </dependency>
+
+    <!-- Jackson: Procesamiento de JSON -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.5.6</version>
+    </dependency>
+
+    <!-- SLF4J / Logging (Compatible con Axway Integrator) -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
+    <!-- JUnit 5 para Pruebas Unitarias -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.9.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>integrator-sdk</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/integrator-javamodules-developmentkit-api-26.19.0-5.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>integrator-simulator-sdk</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/integrator-javamodules-developmentkit-simulator-26.19.0-5.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>integrator-javamodules-developmentkit-runtime</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/integrator-javamodules-developmentkit-runtime-26.19.0-5.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-beanutils-1.11.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-collections-3.2.2.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-lang3-3.14.0.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>com.axway.b2bi</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>2.6.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/commons-logging-1.3.2.jar</systemPath>
+    </dependency>
+
+
+
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+      <!-- Assembly Plugin para empaquetar un JAR con dependencias (Fat-JAR) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifestEntries>
+              <Main-Class>cl.go2.b2bi.jmc.FoliadorService</Main-Class>
+              <Container-Version>3.8</Container-Version>
+              <Component-Version>1.0</Component-Version>
+            </manifestEntries>
+          </archive>
+
+        </configuration>
+
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
