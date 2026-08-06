@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.List;
 
@@ -22,12 +21,23 @@ public class HeaderParserService {
         public String tDocHeader;
         public String institucionOFilial;
         public String fecha;
+        private int largoRegistro;
+
         public boolean encodeError = false;
 
-        public HeaderData(String tDocHeader, String institucionOFilial, String fecha) {
+        public HeaderData(String tDocHeader, String institucionOFilial, String fecha, int largoRegistro) {
             this.tDocHeader = tDocHeader;
             this.institucionOFilial = institucionOFilial;
             this.fecha = fecha;
+            setLargoRegistro(largoRegistro);
+        }
+
+        public int getLargoRegistro() {
+            return largoRegistro;
+        }
+
+        public void setLargoRegistro(int largoRegistro) {
+            this.largoRegistro = largoRegistro;
         }
     }
 
@@ -40,7 +50,7 @@ public class HeaderParserService {
         Data inputData = processingMessage.getData();
         InputStream in = inputData.getInput();
         if (in == null ) {
-            HeaderData err = new HeaderData("000", "0000", null);
+            HeaderData err = new HeaderData("000", "0000", null, 0);
             err.encodeError = true;
             return err;
         }
@@ -88,19 +98,21 @@ public class HeaderParserService {
                     logger.info("Header parser dinámico exitoso: tDoc={}, institucion={}, fecha={}",
                             tDocCandidate, institucionFinal, fechaCandidate);
 
-                    return new HeaderData(tDocCandidate, institucionFinal, fechaCandidate);
+                    // obtenido el tipo de documento, obtenemos el largo de éste desde la BD,
+                    int largo  = dao.obtenerLargoRegistro(conn, tDocCandidate,"F");
+                    return new HeaderData(tDocCandidate, institucionFinal, fechaCandidate, largo);
                 }
             }
 
         } catch (Exception e) {
             logger.error("Error consultando o aplicando reglas de posiciones dinámicas en la BD", e);
-            HeaderData err = new HeaderData("000", "0000", null);
+            HeaderData err = new HeaderData("000", "0000", null, 0);
             err.encodeError = true;
             return err;
         }
 
         // Si ninguna regla posicional coincidió
-        return new HeaderData("000", "0000", null);
+        return new HeaderData("000", "0000", null, 0);
     }
 
     /**

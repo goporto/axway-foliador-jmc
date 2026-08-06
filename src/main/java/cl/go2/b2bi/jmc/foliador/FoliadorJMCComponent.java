@@ -41,14 +41,13 @@ public class FoliadorJMCComponent {
         logger.info("FoliadorJMCComponent: Iniciando requerimiento asíncrono para archivo {}", cleanedFilename);
 
 
-        long cantLineas = RecordCounterUtils.calculateFixedRows(context, processingMessage);
         //Se inyecta el archivo de propiedades
         service.setConfigFilePath(this.configFilePath);
 
         try {
 
             // Espera el resultado del sub-thread con timeout de resiliencia
-           return service.executeFoliadoLogic(usuarioCasilla,cleanedFilename,context,processingMessage,fileSize,cantLineas);
+           return service.executeFoliadoLogic(usuarioCasilla,cleanedFilename,context,processingMessage,fileSize);
             
         } catch (Exception e) {
             logger.error("FoliadorJMCComponent: Error durante la foliación en el sub-thread", e);

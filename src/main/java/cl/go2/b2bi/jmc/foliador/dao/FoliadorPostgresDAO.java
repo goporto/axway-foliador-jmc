@@ -17,7 +17,8 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
 
     @Override
     public String getCorrelativoValTraza(Connection conn) throws SQLException {
-        String sql = "SELECT nextval('correlativo_val_traza_seq')";
+        //String sql = "SELECT nextval('OPE_MFT.correlativo_val_traza')";
+        String sql = "SELECT last_value FROM \"OPE_MFT\".\"CORRELATIVO_VAL_TRAZA\"";
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
@@ -42,14 +43,19 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
             conn.setAutoCommit(false);
         }
 
-        String sql = "{ ? = call rdc.proc_obtener_cod_inst_y_casilla_f1(?) }";
+        String sql = "call \"OPE_MFT\".\"PROC_OBTENER_COD_INST_Y_CASILLA_F1\"(?,?)";
 
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.registerOutParameter(1, Types.REF_CURSOR);
-            cstmt.setString(2, casilla);
+            // IN: casilla
+            cstmt.setString(1, casilla.trim());
+
+            // OUT: refcursor
+            cstmt.registerOutParameter(2, Types.REF_CURSOR);
+
+
             cstmt.execute();
 
-            try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
+            try (ResultSet rs = (ResultSet) cstmt.getObject(2)) {
                 if (rs != null && rs.next()) {
                     String codInst = rs.getString(1);
                     String userCasilla = rs.getString(2);
@@ -63,6 +69,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
         }
         return null;
     }
+
 
     @Override
     public String obtenerTDoc(Connection conn, String tDocHeader) throws SQLException {
@@ -87,7 +94,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
             conn.setAutoCommit(false);
 
             // Sintaxis correcta para PROCEDURE con IN (pos 1) y OUT (pos 2):
-            String sql = "call rdc.proc_obtener_t_doc(?, ?)";
+            String sql = "call \"OPE_MFT\".\"PROC_OBTENER_T_DOC\"(?, ?)";
 
             try (CallableStatement cstmt = conn.prepareCall(sql)) {
                 // Parámetro 1: IN p_t_doc (character varying)
@@ -133,7 +140,8 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
 
     @Override
     public String getCorrelativoEntidad(Connection conn, String entidadOrigen) throws SQLException {
-        String sql = "SELECT nextval('correlativo_entrada_" + entidadOrigen.toLowerCase() + "_seq')";
+        String sql = "SELECT last_value FROM \"OPE_MFT\".\"CORRELATIVO_ENTRADA_" + entidadOrigen.toLowerCase() +"\"" ;
+        conn.rollback();
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
@@ -152,11 +160,11 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
             conn.setAutoCommit(false);
         }
 
-        String sql = "{ ? = call rdc.proc_obtener_version_max_msg(?) }";
+        String sql = "call \"OPE_MFT\".\"PROC_OBTENER_VERSION_MAX_MSG\"(?,?)";
 
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.registerOutParameter(1, Types.REF_CURSOR);
-            cstmt.setString(2, tDoc);
+            cstmt.setString(1, tDoc);
+            cstmt.registerOutParameter(2, Types.REF_CURSOR);
             cstmt.execute();
 
             try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
@@ -178,9 +186,9 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
                                         String archivoEntrada, String tDoc, long fileSize,
                                         String correlativoInst, int version, long cantLineas,
                                         String filial, String fecha) throws SQLException {
-        String sql = "{ ? = call rdc.func_val_insertar_encabezado_traza(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }";
+        String sql = "{ ? = call \"OPE_MFT\".\"FUNC_VAL_INSERTAR_ENCABEZADO_TRAZA\"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }";
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.registerOutParameter(1, Types.INTEGER);
+            cstmt.registerOutParameter(1, Types.NUMERIC);
             cstmt.setString(2, correlativo);
             cstmt.setString(3, flujo);
             cstmt.setString(4, usuarioCasilla);
@@ -194,6 +202,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
             cstmt.setString(12, filial);
             cstmt.setString(13, fecha);
             cstmt.execute();
+            conn.commit();
         }
     }
 
@@ -202,7 +211,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
         String formattedDate = LocalDateTime.now().format(DATE_FORMATTER);
 
         // Invocación explícita pasando null::varchar para evitar ambigüedades en Postgres
-        String sql = "SELECT rdc.func_val_cargamovimiento(?::varchar, null::varchar, null::integer, null::varchar, ?::varchar, ?::varchar)";
+        String sql = "SELECT \"OPE_MFT\".\"FUNC_VAL_CARGAMOVIMIENTO\"(?::varchar, null::varchar, null::integer, null::varchar, ?::varchar, ?::varchar)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, correlativo);
@@ -238,7 +247,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
         }
 
         // 2. Invocar la función con SELECT directo
-        String sql = "SELECT rdc.func_val_cargaerror(?, ?, ?, ?, ?)";
+        String sql = "SELECT \"OPE_MFT\".\"FUNC_VAL_CARGAERROR\"(?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, correlativo);
@@ -275,15 +284,19 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
 
     @Override
     public int obtenerLargoRegistro(Connection conn, String tDoc, String modo) throws SQLException {
-        String sql = "{ ? = call rdc.func_buscar_largo_registro(?, ?) }";
+        String sql = "{ ? = call \"OPE_MFT\".\"FUNC_BUSCAR_LARGO_REGISTRO\"(?, ?) }";
         String modoParam = (modo == null || modo.isEmpty()) ? "F" : modo;
 
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.registerOutParameter(1, Types.INTEGER);
+            // Registrar como NUMERIC para que coincida con RETURNS numeric en PL/pgSQL
+            cstmt.registerOutParameter(1, Types.NUMERIC);
             cstmt.setString(2, tDoc);
             cstmt.setString(3, modoParam);
+
             cstmt.execute();
-            return cstmt.getInt(1);
+
+            // getInt(1) hace la conversión automáticamente sin problemas
+            return cstmt.getBigDecimal(1).intValue();
         } catch (SQLException e) {
             logger.error("[PostgreSQL] Error al consultar func_buscar_largo_registro para tDoc: " + tDoc, e);
         }
@@ -294,24 +307,49 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
     public List<String> obtenerListaTDocs(Connection conn) throws SQLException {
         List<String> list = new ArrayList<>();
         boolean originalAutoCommit = conn.getAutoCommit();
-        if (originalAutoCommit) {
-            conn.setAutoCommit(false);
-        }
 
-        String sql = "{ ? = call rdc.proc_obtener_lista_tdocs() }";
-        try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.registerOutParameter(1, Types.REF_CURSOR);
-            cstmt.execute();
-            try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
-                while (rs != null && rs.next()) {
-                    list.add(rs.getString(1));
+        try {
+            // En PostgreSQL, leer un refcursor requiere estar dentro de una transacción activa
+            if (originalAutoCommit) {
+                conn.setAutoCommit(false);
+            }
+
+            // Sintaxis NATIVA para PROCEDURE en PostgreSQL con 1 parámetro OUT:
+            String sql = "CALL \"OPE_MFT\".\"PROC_OBTENER_LISTA_TDOCS\"(?)";
+
+            try (CallableStatement cstmt = conn.prepareCall(sql)) {
+                // Registrar el parámetro 1 como OUT refcursor
+                cstmt.registerOutParameter(1, Types.REF_CURSOR);
+                cstmt.execute();
+
+                // Recuperar el ResultSet del cursor en la posición 1
+                try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
+                    while (rs != null && rs.next()) {
+                        list.add(rs.getString(1));
+                    }
                 }
             }
+
+            conn.commit(); // Confirmamos para liberar los locks/recursos del refcursor en Postgres
+
+        } catch (SQLException e) {
+            if (!conn.getAutoCommit()) {
+                try {
+                    conn.rollback(); // Limpia la transacción para no bloquear la conexión
+                } catch (SQLException rollbackEx) {
+                    logger.error("[PostgreSQL] Error al hacer rollback", rollbackEx);
+                }
+            }
+            logger.error("[PostgreSQL] Error al ejecutar proc_obtener_lista_tdocs", e);
+            throw e;
         } finally {
             if (originalAutoCommit) {
-                conn.setAutoCommit(true);
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException ignored) {}
             }
         }
+
         return list;
     }
 
@@ -323,7 +361,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
             conn.setAutoCommit(false);
         }
 
-        String sql = "{ ? = call rdc.proc_obtener_posiciones() }";
+        String sql = "call \"OPE_MFT\".\"PROC_OBTENER_POSICIONES\"(?)";
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
             cstmt.registerOutParameter(1, Types.REF_CURSOR);
             cstmt.execute();
@@ -336,6 +374,7 @@ public class FoliadorPostgresDAO implements FoliadorDAO {
                 }
             }
         } finally {
+            conn.commit();
             if (originalAutoCommit) {
                 conn.setAutoCommit(true);
             }

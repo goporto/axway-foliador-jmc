@@ -33,7 +33,9 @@ public class FoliadorPipelineTest {
 
 
         // Simular el contenido del archivo gigante usando un Header maqueta (1 KB es suficiente)
-        mockPayload = ("HEADER_RDC01_20260730_0001\nCuerpo de prueba...").getBytes("UTF-8");
+        //mockPayload = ("HEADER_RDC01_20260730_0001\nCuerpo de prueba...").getBytes("UTF-8");
+        mockPayload = Simulator.getResourceContent("RDC01_test02_BUENO 1.txt");
+
     }
 
     /**
@@ -54,8 +56,9 @@ public class FoliadorPipelineTest {
             Activity[] nextActivities = new Activity[] { activity0, activity1 };
 
             // Opcional: Si tu JMC requiere atributos de metadatos de entrada, puedes estamparlos
-            inMessage.setAttribute("ConsumptionFilename", "falaft3_TEST_GIGANTE.txt");
+            inMessage.setAttribute("ConsumptionFilename", "web-desabchi_TEST_GIGANTE.txt");
             inMessage.setAttribute("FileSize", "5000000000");
+            inMessage.setAttribute("LocalFileRecordFormat", "322");
             // 5. Ejecutar la JMC en el simulador local (100% aislado del servidor)
             Simulator.execute(foliador, inMessage, nextActivities);
 
@@ -79,8 +82,7 @@ public class FoliadorPipelineTest {
             // 6. VALIDACIÓN DE ENRUTAMIENTO (Actividad Destino)
             // Tu JMC ejecutó: resultMessage.setActivity(nextActivities[5])
             // Validamos que la actividad asignada al mensaje resultante sea efectivamente la segunda ("actividadRuteadoraDestino")
-            assertEquals("El mensaje resultante debe dirigirse a la segunda actividad (índice 1)",
-                    activity1.getName(), resultMessage.getActivity().getName()); // [8, 9]
+            assertEquals(activity1.getName(), resultMessage.getActivity().getName(), "El mensaje resultante debe dirigirse a la segunda actividad (índice 1)"); // [8, 9]
 
             System.out.println("[JUnit SUCCESS] Test completado. Atributos inyectados para el ruteador con éxito.");
         } catch (Exception e) {

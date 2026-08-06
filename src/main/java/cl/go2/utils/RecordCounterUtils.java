@@ -4,7 +4,7 @@ import com.axway.xib.ProcessingMessage;
 
 public class RecordCounterUtils {
 
-    public static long calculateFixedRows(Context context, ProcessingMessage message) {
+    public static long calculateFixedRows(Context context, ProcessingMessage message, int largoRegistro) {
         try {
             // 1. Recuperar FileSize desde los atributos del mensaje (tipo long para evitar overflow)
             Object fileSizeObj = message.getAttribute("FileSize");
@@ -18,7 +18,7 @@ public class RecordCounterUtils {
             // 2. Recuperar el formato de registro (FIXED_BINARY o FIXED_TEXT)
             String recordFormat = (String) message.getAttribute("LocalFileRecordFormat");
             if (recordFormat == null) {
-                recordFormat = "FIXED_BINARY"; // Valor por defecto si no está definido
+                recordFormat = "FIXED_TEXT"; // Valor por defecto si no está definido
             }
 
             // 3. Recuperar el largo del registro (RecordLength)
@@ -29,6 +29,10 @@ public class RecordCounterUtils {
             } else if (recLenObj instanceof String) {
                 recordLength = Integer.parseInt((String) recLenObj);
             }
+
+            //Si no podemos obtener el largo del registro, directamente desde el archivo, usamos el parámetro
+            recordLength = largoRegistro;
+
 
             if (fileSize <= 0 || recordLength <= 0) {
                 context.getContainer().getLogger().warn("No se pudo calcular: FileSize o RecordLength inválidos.");

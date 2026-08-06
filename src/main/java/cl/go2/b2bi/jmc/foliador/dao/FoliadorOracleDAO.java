@@ -202,18 +202,29 @@ public class FoliadorOracleDAO implements FoliadorDAO {
     @Override
     public List<String> obtenerListaTDocs(Connection conn) throws SQLException {
         List<String> list = new ArrayList<>();
-        String sql = "{call PROC_OBTENER_LISTA_TDOCS(?)}";
+
+        // Sintaxis estándar JDBC para PROCEDURE con 1 parámetro OUT refcursor en Oracle:
+        String sql = "{ call proc_obtener_lista_tdocs(?) }";
+
         try (CallableStatement cstmt = conn.prepareCall(sql)) {
-            cstmt.registerOutParameter(1, OracleTypes.CURSOR);
+            // En Oracle usas Types.REF_CURSOR (o oracle.jdbc.OracleTypes.CURSOR)
+            cstmt.registerOutParameter(1, Types.REF_CURSOR);
             cstmt.execute();
+
             try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
                 while (rs != null && rs.next()) {
                     list.add(rs.getString(1));
                 }
             }
+            logger.info("[Oracle] proc_obtener_lista_tdocs ejecutada exitosamente. Total registros: {}", list.size());
+        } catch (SQLException e) {
+            logger.error("[Oracle] Error al ejecutar proc_obtener_lista_tdocs", e);
+            throw e;
         }
+
         return list;
     }
+
 
     @Override
     public List<PositionConfig> obtenerPosiciones(Connection conn) throws SQLException {

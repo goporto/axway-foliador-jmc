@@ -161,7 +161,7 @@
           </descriptorRefs>
           <archive>
             <manifestEntries>
-              <Main-Class>cl.go2.b2bi.jmc.FoliadorService</Main-Class>
+              <Main-Class>cl.go2.b2bi.jmc.foliador.pipeline.FoliadorPipeline</Main-Class>
               <Container-Version>3.8</Container-Version>
               <Component-Version>1.0</Component-Version>
             </manifestEntries>

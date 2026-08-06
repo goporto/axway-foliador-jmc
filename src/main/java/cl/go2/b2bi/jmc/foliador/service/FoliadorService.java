@@ -4,6 +4,7 @@ import cl.go2.b2bi.jmc.foliador.config.DatabaseFactory;
 import cl.go2.b2bi.jmc.foliador.dao.DAOFactory;
 import cl.go2.b2bi.jmc.foliador.dao.FoliadorDAO;
 import cl.go2.b2bi.jmc.foliador.model.FoliadorResultDTO;
+import cl.go2.utils.RecordCounterUtils;
 import com.axway.xib.Context;
 import com.axway.xib.ProcessingMessage;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ public class FoliadorService {
 
     public FoliadorResultDTO executeFoliadoLogic(String usuarioCasillaInput, String archivoEntrada,
                                                  Context context, ProcessingMessage processingMessage,
-                                                 long fileSize, long cantLineas) throws Exception {
+                                                 long fileSize) throws Exception {
 
         try (Connection conn = DatabaseFactory.getConnection(getConfigFilePath())) {
             String dbUrl = conn.getMetaData().getURL();
@@ -51,11 +52,13 @@ public class FoliadorService {
 
             // 3. Parsear Header
             HeaderParserService.HeaderData headerData = headerParser.parseHeaderFromFile(context,processingMessage,conn,dao);
+            long cantLineas = RecordCounterUtils.calculateFixedRows(context, processingMessage, headerData.getLargoRegistro());
 
             String filial = headerData.institucionOFilial.equals(entidadOrigen) ? "0000" : headerData.institucionOFilial;
 
-            // 4. Obtener t_doc
-            String tDoc = dao.obtenerTDoc(conn, headerData.tDocHeader);
+            // 4. Obtener t_doc...esta sentencia está redundante, porque ya conocemos el tDoc desde el header...
+            //String tDoc = dao.obtenerTDoc(conn, headerData.tDocHeader);
+            String tDoc = headerData.tDocHeader;
 
             // 5. Correlativo de la institución
             String correlativoInst = "00000000";
